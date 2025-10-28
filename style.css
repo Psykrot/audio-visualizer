@@ -1,6 +1,10 @@
 body {
-  background: transparent; /* OBS-friendly */
+  background: radial-gradient(farthest-side, #182158 0%, #030414 100%) no-repeat fixed 0 0;
   margin: 0;
+}
+h1 {
+  color: #fff;
+  font: 10vh/1.2 sans-serif;
 }
 #canvas {
   position: absolute;
@@ -9,6 +13,7 @@ body {
   width: 50%;
   height: 400px;
 }
+
 button {
   position: absolute;
   top: 50%;
@@ -19,13 +24,4 @@ button {
   padding: 0.5em 1.5em;
   border: none;
   background: rgba(255,255,255,0.8);
-}
-#device-select {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  display: none;
-  z-index: 10;
-  padding: 0.5em;
-  font-size: 14px;
 }
