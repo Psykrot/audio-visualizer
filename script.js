@@ -1,5 +1,6 @@
 const canvas = document.getElementById("visualizer");
 const ctx = canvas.getContext("2d");
+const deviceSelect = document.getElementById("device-select");
 const numBars = 64;
 
 let analyser;
@@ -15,35 +16,6 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// Setup audio stream (always prompt)
-async function setupAudio() {
-  try {
-    if (audioCtx) audioCtx.close(); // Close previous context
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    // Ask for any microphone/audio input
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true
-    });
-
-    source = audioCtx.createMediaStreamSource(stream);
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 256;
-    const bufferLength = analyser.frequencyBinCount;
-    dataArray = new Uint8Array(bufferLength);
-
-    source.connect(analyser);
-    draw();
-
-  } catch (err) {
-    console.error("Audio access failed:", err);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "white";
-    ctx.font = "24px sans-serif";
-    ctx.fillText("Audio access denied or failed", 20, 40);
-  }
-}
-
 // Draw visualizer
 function draw() {
   if (!analyser) return;
@@ -58,6 +30,7 @@ function draw() {
     const x = i * barWidth;
     const y = canvas.height - barHeight;
 
+    // Gradient + glow
     const gradient = ctx.createLinearGradient(x, y, x + barWidth, canvas.height);
     gradient.addColorStop(0, "#ff6ec4");
     gradient.addColorStop(0.3, "#7873f5");
@@ -65,11 +38,64 @@ function draw() {
     gradient.addColorStop(1, "#00ffea");
 
     ctx.fillStyle = gradient;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = gradient;
     ctx.fillRect(x, y, barWidth * 0.8, barHeight);
   }
 
   requestAnimationFrame(draw);
 }
 
-// Always prompt for audio input
+// Setup audio stream
+async function setupAudio(deviceId) {
+  try {
+    if (audioCtx) await audioCtx.close(); // Close previous context
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    await audioCtx.resume();
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: deviceId ? { deviceId: { exact: deviceId } } : true
+    });
+
+    source = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.8;
+    const bufferLength = analyser.frequencyBinCount;
+    dataArray = new Uint8Array(bufferLength);
+
+    source.connect(analyser);
+    draw();
+  } catch (err) {
+    console.error("Audio access failed:", err);
+    populateDeviceSelect();
+  }
+}
+
+// Populate device dropdown if needed
+async function populateDeviceSelect() {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const audioInputs = devices.filter(d => d.kind === "audioinput");
+
+  if (audioInputs.length === 0) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white";
+    ctx.font = "24px sans-serif";
+    ctx.fillText("No audio input devices found", 20, 40);
+    return;
+  }
+
+  deviceSelect.innerHTML = "";
+  audioInputs.forEach(d => {
+    const option = document.createElement("option");
+    option.value = d.deviceId;
+    option.text = d.label || `Input ${d.deviceId}`;
+    deviceSelect.appendChild(option);
+  });
+
+  deviceSelect.style.display = "block";
+  deviceSelect.onchange = () => setupAudio(deviceSelect.value);
+}
+
+// Always prompt for input first
 setupAudio();
