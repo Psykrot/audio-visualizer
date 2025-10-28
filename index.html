@@ -9,7 +9,7 @@
     margin: 0;
     padding: 0;
     height: 100%;
-    background: transparent; /* transparent background */
+    background: transparent;
     overflow: hidden;
     font-family: sans-serif;
     color: #fff;
@@ -21,7 +21,7 @@
     height: 100%;
   }
 
-  #login-btn {
+  #login-btn, #copy-url-btn {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -34,9 +34,10 @@
     color: #fff;
     cursor: pointer;
     z-index: 10;
+    display: none;
   }
 
-  #login-btn:hover {
+  #login-btn:hover, #copy-url-btn:hover {
     background: rgba(255,255,255,0.2);
   }
 
@@ -55,7 +56,8 @@
 <body>
 <canvas id="visualizer"></canvas>
 <button id="login-btn">Login with Spotify</button>
-<div id="instructions">Open this URL in Chrome, login with Spotify, then use the full URL (with #access_token=…) in Streamlabs Browser Source with transparency enabled.</div>
+<button id="copy-url-btn">Copy URL for Streamlabs</button>
+<div id="instructions">Open this page in Chrome to login and generate URL for Streamlabs Browser Source.</div>
 
 <script>
 const canvas = document.getElementById("visualizer");
@@ -72,13 +74,17 @@ resizeCanvas();
 const colors = ['#FF77FF','#FFD700','#00FFFF','#7F00FF','#FF6EC7','#00FFAA'];
 
 // Spotify OAuth
-const CLIENT_ID = 'e04e71c444284496a39133ad0d4f03d0';
-const REDIRECT_URI = 'https://psykrot.github.io/audio-visualizer/'; // must match Spotify app redirect URI exactly
+const CLIENT_ID = 'YOUR_SPOTIFY_CLIENT_ID';
+const REDIRECT_URI = 'YOUR_HOSTED_URL/'; // must match exactly
 const SCOPES = 'user-read-currently-playing';
 
 let accessToken = null;
 
-// Helper: get token from URL hash
+// UI Elements
+const loginBtn = document.getElementById("login-btn");
+const copyBtn = document.getElementById("copy-url-btn");
+
+// Extract token from URL hash
 function getTokenFromHash(){
   if(window.location.hash){
     const hash = window.location.hash.substring(1);
@@ -88,21 +94,27 @@ function getTokenFromHash(){
   return null;
 }
 
-// Login button
-const loginBtn = document.getElementById("login-btn");
+// Show login button if no token
+accessToken = getTokenFromHash();
+if(!accessToken){
+  loginBtn.style.display = 'block';
+}
+
+// Login button click
 loginBtn.onclick = () => {
   const authURL = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
   window.location.href = authURL;
 };
 
-// Check for token
-accessToken = getTokenFromHash();
+// Show copy URL button if token exists
 if(accessToken){
   loginBtn.style.display = 'none';
-  document.getElementById('instructions').style.display = 'none';
+  copyBtn.style.display = 'block';
+  copyBtn.onclick = () => {
+    const urlWithToken = window.location.href;
+    navigator.clipboard.writeText(urlWithToken).then(()=>alert("URL copied! Paste this into Streamlabs Browser Source with transparency enabled."));
+  };
   startVisualizer();
-} else {
-  console.log("No Spotify token detected. Click Login with Spotify.");
 }
 
 // Spotify API helpers
