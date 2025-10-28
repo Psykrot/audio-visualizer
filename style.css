@@ -1,50 +1,33 @@
-/* Body transparent for OBS */
-body {
+/* Fullscreen canvas */
+body, html {
   margin: 0;
-  background: transparent;
+  padding: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  font-family: 'Arial', sans-serif;
+  background: transparent;
 }
 
-/* Login container always on top */
-#login-container {
+/* Login button style */
+#login-button {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 1000;       /* VERY high */
-  pointer-events: auto; /* Ensure it receives clicks */
-}
-
-/* Login button styling */
-#login-button {
-  font-size: 20px;
-  padding: 12px 24px;
-  background: linear-gradient(90deg, #ff6ec7, #1babe9, #ffd700);
-  color: white;
-  border: none;
-  border-radius: 14px;
+  padding: 15px 40px;
+  font-size: 18px;
+  font-weight: bold;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  z-index: 1001;
+  background: linear-gradient(90deg, #ff6ec4, #7873f5, #f9e07f);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  z-index: 10;
 }
 
-/* Hover effect */
-#login-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px rgba(255, 110, 199, 0.7),
-              0 0 20px rgba(27, 171, 233, 0.7),
-              0 0 20px rgba(255, 215, 0, 0.7);
-}
-
-/* Canvas fills screen, behind everything, ignores pointer events */
-canvas {
+/* Canvas */
+#visualizer {
+  width: 100%;
+  height: 100%;
   display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 1;           /* behind login */
-  pointer-events: none; /* click passes through */
 }
