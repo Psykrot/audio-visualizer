@@ -3,7 +3,7 @@ window.addEventListener("load", () => {
   const canvas = document.getElementById("visualizer");
   const ctx = canvas.getContext("2d");
 
-  // Resize canvas to fill window
+  // Resize canvas
   function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -11,23 +11,25 @@ window.addEventListener("load", () => {
   window.addEventListener("resize", resizeCanvas);
   resizeCanvas();
 
-  // Get Spotify token from hash or sessionStorage
-  let accessToken = null;
-  if (window.location.hash.includes("access_token=")) {
+  // --- Parse token from URL hash ---
+  function getAccessToken() {
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
-    accessToken = params.get("access_token");
-    if (accessToken) sessionStorage.setItem("spotify_token", accessToken);
-    history.replaceState(null, "", window.location.pathname);
+    const tokenFromHash = params.get("access_token");
+    if (tokenFromHash) {
+      sessionStorage.setItem("spotify_token", tokenFromHash);
+      // Remove hash so button stays hidden
+      history.replaceState(null, "", window.location.pathname);
+      return tokenFromHash;
+    }
+    return sessionStorage.getItem("spotify_token");
   }
 
-  if (!accessToken) {
-    accessToken = sessionStorage.getItem("spotify_token");
-  }
+  const accessToken = getAccessToken();
 
   // Show/hide login button
   if (accessToken) {
-    loginButton.style.display = "none";
+    loginButton.style.display = "none"; // Force hide
     startVisualizer(accessToken);
   } else {
     loginButton.style.display = "block";
@@ -36,26 +38,23 @@ window.addEventListener("load", () => {
     };
   }
 
-  // ---------------------
-  // Visualizer function
-  // ---------------------
+  // --- Visualizer ---
   function startVisualizer(token) {
     console.log("Spotify token:", token);
 
+    // Placeholder: simple bars for now
     const numBars = 64;
-    const bars = new Array(numBars).fill(0);
 
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       for (let i = 0; i < numBars; i++) {
-        const height = Math.random() * canvas.height * 0.7; // placeholder for audio data
+        const height = Math.random() * canvas.height * 0.7;
 
         const barWidth = canvas.width / numBars;
         const x = i * barWidth;
         const y = canvas.height - height;
 
-        // Vaporwave gradient colors
         const gradient = ctx.createLinearGradient(x, y, x + barWidth, canvas.height);
         gradient.addColorStop(0, "#ff6ec4");
         gradient.addColorStop(0.3, "#7873f5");
