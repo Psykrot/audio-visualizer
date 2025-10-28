@@ -3,24 +3,8 @@ body, html {
   padding: 0;
   width: 100%;
   height: 100%;
+  background: transparent; /* OBS-friendly transparent background */
   overflow: hidden;
-  background: transparent;
-}
-
-#login-button {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding: 15px 40px;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  background: linear-gradient(90deg, #ff6ec4, #7873f5, #f9e07f);
-  border: none;
-  border-radius: 10px;
-  color: white;
-  z-index: 10;
 }
 
 #visualizer {
