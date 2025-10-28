@@ -1,4 +1,4 @@
-/* Make the body transparent for OBS */
+/* Body transparent for OBS */
 body {
   margin: 0;
   background: transparent;
@@ -6,28 +6,30 @@ body {
   font-family: 'Arial', sans-serif;
 }
 
-/* Center the login button above the canvas */
+/* Login container always on top */
 #login-container {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 10; /* Make sure it's above the canvas */
+  z-index: 1000;       /* VERY high */
+  pointer-events: auto; /* Ensure it receives clicks */
 }
 
-/* Login button style */
+/* Login button styling */
 #login-button {
   font-size: 20px;
-  padding: 10px 20px;
-  background: linear-gradient(90deg, #ff6ec7, #1babe9, #ffd700); /* Vaporwave gradient */
+  padding: 12px 24px;
+  background: linear-gradient(90deg, #ff6ec7, #1babe9, #ffd700);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
+  z-index: 1001;
 }
 
-/* Hover effect for button */
+/* Hover effect */
 #login-button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 20px rgba(255, 110, 199, 0.7),
@@ -35,12 +37,14 @@ body {
               0 0 20px rgba(255, 215, 0, 0.7);
 }
 
-/* Canvas covering full screen */
+/* Canvas fills screen, behind everything, ignores pointer events */
 canvas {
   display: block;
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 1; /* Behind the login button */
-  pointer-events: none; /* Allow clicks to pass through */
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;           /* behind login */
+  pointer-events: none; /* click passes through */
 }
