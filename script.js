@@ -1,11 +1,10 @@
 const canvas = document.getElementById("visualizer");
 const ctx = canvas.getContext("2d");
 const deviceSelect = document.getElementById("device-select");
-const numBars = 64;
 
+let audioCtx;
 let analyser;
 let dataArray;
-let audioCtx;
 let source;
 
 // Resize canvas
@@ -16,32 +15,30 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// Draw visualizer
+// Draw audio level
 function draw() {
   if (!analyser) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  analyser.getByteFrequencyData(dataArray);
 
-  const barWidth = canvas.width / numBars;
+  analyser.getByteTimeDomainData(dataArray);
 
-  for (let i = 0; i < numBars; i++) {
-    const value = dataArray[Math.floor(i * dataArray.length / numBars)];
-    const barHeight = (value / 255) * canvas.height * 0.8;
-    const x = i * barWidth;
-    const y = canvas.height - barHeight;
-
-    // Gradient + glow
-    const gradient = ctx.createLinearGradient(x, y, x + barWidth, canvas.height);
-    gradient.addColorStop(0, "#ff6ec4");
-    gradient.addColorStop(0.3, "#7873f5");
-    gradient.addColorStop(0.6, "#f9e07f");
-    gradient.addColorStop(1, "#00ffea");
-
-    ctx.fillStyle = gradient;
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = gradient;
-    ctx.fillRect(x, y, barWidth * 0.8, barHeight);
+  // Compute RMS (overall loudness)
+  let sum = 0;
+  for (let i = 0; i < dataArray.length; i++) {
+    const v = (dataArray[i] - 128) / 128; // normalize -1 to 1
+    sum += v * v;
   }
+  const rms = Math.sqrt(sum / dataArray.length);
+
+  // Log RMS for debugging
+  console.log("RMS:", rms.toFixed(3));
+
+  // Draw a single vertical bar representing audio level
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const barHeight = rms * canvas.height * 3; // scale for visibility
+  ctx.fillStyle = "#ff6ec4";
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = "#ff6ec4";
+  ctx.fillRect(canvas.width / 2 - 50, canvas.height - barHeight, 100, barHeight);
 
   requestAnimationFrame(draw);
 }
@@ -49,7 +46,7 @@ function draw() {
 // Setup audio stream
 async function setupAudio(deviceId) {
   try {
-    if (audioCtx) await audioCtx.close(); // Close previous context
+    if (audioCtx) await audioCtx.close();
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     await audioCtx.resume();
 
@@ -59,10 +56,8 @@ async function setupAudio(deviceId) {
 
     source = audioCtx.createMediaStreamSource(stream);
     analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.8;
-    const bufferLength = analyser.frequencyBinCount;
-    dataArray = new Uint8Array(bufferLength);
+    analyser.fftSize = 1024;
+    dataArray = new Uint8Array(analyser.fftSize);
 
     source.connect(analyser);
     draw();
@@ -72,7 +67,7 @@ async function setupAudio(deviceId) {
   }
 }
 
-// Populate device dropdown if needed
+// Populate device dropdown
 async function populateDeviceSelect() {
   const devices = await navigator.mediaDevices.enumerateDevices();
   const audioInputs = devices.filter(d => d.kind === "audioinput");
