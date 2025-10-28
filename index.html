@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cyberpunk Audio Visualizer</title>
+<title>Vaporwave Audio Visualizer</title>
 <style>
   html, body {
     margin: 0;
     height: 100%;
-    background: transparent;
+    background: #00ff00; /* Greenscreen background */
     overflow: hidden;
   }
 
@@ -36,7 +36,17 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// Automatically find the Voicemeeter B2 device
+// Vaporwave colors for bars
+const colors = [
+  '#FF77FF', // pink/purple
+  '#FFD700', // gold
+  '#00FFFF', // cyan
+  '#7F00FF', // violet
+  '#FF6EC7', // neon pink
+  '#00FFAA'  // mint green
+];
+
+// Automatically find Voicemeeter B2
 async function getVoicemeeterStream() {
   const devices = await navigator.mediaDevices.enumerateDevices();
   const target = devices.find(d =>
@@ -77,23 +87,11 @@ function draw() {
 
   for (let i = 0; i < dataArray.length; i++) {
     const barHeight = (dataArray[i] / 255) * HEIGHT * 0.9;
-    const hue = (i * 4) % 360;
 
-    // Neon gradient
-    const gradient = ctx.createLinearGradient(0, HEIGHT - barHeight, 0, HEIGHT);
-    gradient.addColorStop(0, `hsl(${hue}, 100%, 60%)`);
-    gradient.addColorStop(1, "rgba(0,0,0,0.1)");
-
-    ctx.fillStyle = gradient;
+    // Vaporwave color cycling
+    const color = colors[i % colors.length];
+    ctx.fillStyle = color;
     ctx.shadowBlur = 20;
-    ctx.shadowColor = `hsl(${hue}, 100%, 70%)`;
-    ctx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight);
+    ctx.shadowColor = color;
 
-    x += barWidth + 1;
-  }
-}
-
-setupAudio();
-</script>
-</body>
-</html>
+    ctx.fillRect(x, HEIGHT - barHeight, barWidth, barHe
