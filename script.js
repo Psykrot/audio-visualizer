@@ -15,7 +15,7 @@ async function setupAudio() {
     // Ask for the Voicemeeter output device
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
-        deviceId: { exact: "Voicemeeter Out B2 (VB-Audio Voicemeeter VAIO)" }
+        deviceId: { exact: "VM432:5" }
       }
     });
 
