@@ -28,17 +28,20 @@
     transform: translate(-50%, -50%);
     font-size: 20px;
     padding: 14px 28px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0,0,0,0.5); /* semi-transparent dark background */
     border: 2px solid #fff;
     border-radius: 10px;
     color: #fff;
     cursor: pointer;
     z-index: 10;
     display: none;
+    text-shadow: 0 0 8px #fff, 0 0 12px #fff; /* neon glow */
+    transition: background 0.2s, box-shadow 0.2s;
   }
 
   #login-btn:hover, #copy-url-btn:hover {
-    background: rgba(255,255,255,0.2);
+    background: rgba(0,0,0,0.7);
+    box-shadow: 0 0 20px #fff;
   }
 
   #instructions {
@@ -188,4 +191,3 @@ async function startVisualizer(){
 </script>
 </body>
 </html>
-
