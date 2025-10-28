@@ -10,7 +10,6 @@ window.addEventListener("load", () => {
   window.addEventListener("resize", resizeCanvas);
   resizeCanvas();
 
-  // Get token from session storage
   function getAccessToken() {
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
@@ -35,27 +34,32 @@ window.addEventListener("load", () => {
     loginButton.style.display = "none";
   }
 
-  // ----------------------
-  // Visualizer Setup
-  // ----------------------
   const numBars = 64;
   let currentTrackId = null;
   let segments = [];
   let trackStartTime = 0;
+  let isPlaying = false;
 
   async function fetchCurrentlyPlaying() {
     try {
       const res = await fetch("https://auth.avinylmix.com/currently-playing", {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
-      if (!res.ok) return;
-
+      if (!res.ok) {
+        isPlaying = false;
+        return;
+      }
       const data = await res.json();
-      if (!data.item) return;
+      if (!data.item || data.is_playing === false) {
+        isPlaying = false;
+        return;
+      }
 
-      // If track changed, fetch audio analysis
+      isPlaying = true;
+
       if (data.item.id !== currentTrackId) {
         currentTrackId = data.item.id;
+
         const analysisRes = await fetch(`https://auth.avinylmix.com/audio-analysis/${currentTrackId}`, {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
@@ -66,54 +70,44 @@ window.addEventListener("load", () => {
       trackStartTime = Date.now() - data.progress_ms;
     } catch (err) {
       console.error("Spotify fetch error:", err);
+      isPlaying = false;
     }
   }
 
   fetchCurrentlyPlaying();
-  setInterval(fetchCurrentlyPlaying, 5000); // update track info
+  setInterval(fetchCurrentlyPlaying, 5000);
+
+  let previousSegment = null;
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (segments.length > 0) {
+    if (isPlaying && segments.length > 0) {
       const nowMs = Date.now() - trackStartTime;
-      // Find segment matching current time
+      // Find current segment
       const currentSegment = segments.find(s => s.start * 1000 <= nowMs && (s.start + s.duration) * 1000 > nowMs);
+      if (currentSegment) {
+        // Linear interpolation for smooth bar growth
+        const segmentProgress = ((nowMs - currentSegment.start * 1000) / (currentSegment.duration * 1000));
+        const loudness = Math.min(currentSegment.loudness_max + 60, 60) / 60;
 
-      const loudness = currentSegment ? Math.min(currentSegment.loudness_max + 60, 60) / 60 : 0.1;
+        const barHeight = loudness * canvas.height * 0.8;
 
-      // Smooth random-ish bar heights based on loudness
-      for (let i = 0; i < numBars; i++) {
-        const barHeight = loudness * canvas.height * (0.5 + Math.random() * 0.5);
         const barWidth = canvas.width / numBars;
-        const x = i * barWidth;
-        const y = canvas.height - barHeight;
 
-        const gradient = ctx.createLinearGradient(x, y, x + barWidth, canvas.height);
-        gradient.addColorStop(0, "#ff6ec4");
-        gradient.addColorStop(0.3, "#7873f5");
-        gradient.addColorStop(0.6, "#f9e07f");
-        gradient.addColorStop(1, "#00ffea");
+        for (let i = 0; i < numBars; i++) {
+          const x = i * barWidth;
+          const y = canvas.height - barHeight;
 
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x, y, barWidth * 0.8, barHeight);
-      }
-    } else {
-      // fallback: random bars
-      for (let i = 0; i < numBars; i++) {
-        const barHeight = Math.random() * canvas.height * 0.7;
-        const barWidth = canvas.width / numBars;
-        const x = i * barWidth;
-        const y = canvas.height - barHeight;
+          const gradient = ctx.createLinearGradient(x, y, x + barWidth, canvas.height);
+          gradient.addColorStop(0, "#ff6ec4");
+          gradient.addColorStop(0.3, "#7873f5");
+          gradient.addColorStop(0.6, "#f9e07f");
+          gradient.addColorStop(1, "#00ffea");
 
-        const gradient = ctx.createLinearGradient(x, y, x + barWidth, canvas.height);
-        gradient.addColorStop(0, "#ff6ec4");
-        gradient.addColorStop(0.3, "#7873f5");
-        gradient.addColorStop(0.6, "#f9e07f");
-        gradient.addColorStop(1, "#00ffea");
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x, y, barWidth * 0.8, barHeight);
+          ctx.fillStyle = gradient;
+          ctx.fillRect(x, y, barWidth * 0.8, barHeight);
+        }
       }
     }
 
