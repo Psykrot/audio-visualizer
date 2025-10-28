@@ -1,6 +1,7 @@
 const canvas = document.getElementById("visualizer");
 const ctx = canvas.getContext("2d");
 const deviceSelect = document.getElementById("device-select");
+const startBtn = document.getElementById("start-btn");
 const numBars = 64;
 
 let audioCtx;
@@ -95,5 +96,8 @@ async function populateDeviceSelect() {
   deviceSelect.onchange = () => setupAudio(deviceSelect.value);
 }
 
-// Start by prompting for audio input
-setupAudio();
+// Start button listener
+startBtn.addEventListener("click", () => {
+  startBtn.style.display = "none"; // hide button
+  setupAudio(); // request audio access
+});
