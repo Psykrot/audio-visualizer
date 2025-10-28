@@ -1,0 +1,30 @@
+body {
+  margin: 0;
+  background: transparent; /* Transparent for OBS */
+  overflow: hidden;
+}
+
+#login-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#login-button {
+  font-size: 20px;
+  padding: 10px 20px;
+  background: linear-gradient(90deg, #ff6ec7, #1babe9, #ffd700);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: 'Arial', sans-serif;
+}
+
+canvas {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
