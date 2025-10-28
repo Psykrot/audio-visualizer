@@ -3,17 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <title>Spotify Visualizer</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background: transparent; margin:0; overflow:hidden; }
+    #login-button {
+      position: absolute; top:50%; left:50%; transform: translate(-50%, -50%);
+      padding: 20px 40px; font-size: 18px; cursor: pointer;
+      background: linear-gradient(90deg, #ff6ec4, #7873f5);
+      border: none; color: white; border-radius: 10px;
+    }
+    #visualizer { width:100%; height:100%; }
+  </style>
 </head>
 <body>
-  <!-- Login Button -->
-  <div id="login-container">
-    <button id="login-button">Login with Spotify</button>
-  </div>
-
-  <!-- Canvas for visualizer -->
-  <canvas id="visualizer"></canvas>
-
+  <button id="login-button">Login with Spotify</button>
+  <div id="visualizer"></div>
   <script src="script.js"></script>
 </body>
 </html>
