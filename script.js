@@ -1,109 +1,39 @@
+// Check if access_token is in URL hash
+function getAccessTokenFromHash() {
+  const hash = window.location.hash.substring(1); // remove #
+  const params = new URLSearchParams(hash);
+  return params.get("access_token");
+}
+
+let accessToken = getAccessTokenFromHash();
+
 const loginButton = document.getElementById("login-button");
-const loginContainer = document.getElementById("login-container");
-const canvas = document.getElementById("visualizer");
-const ctx = canvas.getContext("2d");
+const visualizerContainer = document.getElementById("visualizer");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let audioData = new Array(64).fill(0);
-let token = null;
-
-// Login button click
-loginButton.addEventListener("click", () => {
-  window.location.href = "https://auth.avinylmix.com/login";
-});
-
-// Check token in sessionStorage
-token = sessionStorage.getItem("spotify_access_token");
-
-if (token) {
-  loginContainer.style.display = "none";
-  startVisualizer();
-}
-
-// Poll backend for token after login
-async function checkToken() {
-  try {
-    const res = await fetch("https://auth.avinylmix.com/get-token", {
-      credentials: "include",
+// If we have a token, hide login button and start visualizer
+if (accessToken) {
+  if (loginButton) loginButton.style.display = "none";
+  startVisualizer(accessToken);
+} else {
+  // Show login button
+  if (loginButton) {
+    loginButton.style.display = "block";
+    loginButton.addEventListener("click", () => {
+      // Redirect to your backend login
+      window.location.href = "https://auth.avinylmix.com/login";
     });
-    if (res.ok) {
-      const data = await res.json();
-      token = data.access_token;
-      if (token) {
-        sessionStorage.setItem("spotify_access_token", token);
-        loginContainer.style.display = "none";
-        startVisualizer();
-      }
-    }
-  } catch (err) {
-    console.error(err);
   }
 }
 
-// Call every 2s until token exists
-setInterval(() => {
-  if (!token) checkToken();
-}, 2000);
+// Function to start visualizer (example)
+function startVisualizer(token) {
+  console.log("Access token:", token);
 
-// Visualizer draw
-function drawVisualizer() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // TODO: replace this with your audio visualizer logic
+  visualizerContainer.innerHTML = `<p style="color:white;">Visualizer started with Spotify token!</p>`;
 
-  const barWidth = canvas.width / audioData.length;
-  audioData.forEach((value, i) => {
-    const barHeight = value * canvas.height;
-    const x = i * barWidth;
-    const gradient = ctx.createLinearGradient(x, 0, x + barWidth, canvas.height);
-    gradient.addColorStop(0, "#ff6ec7"); // Pink
-    gradient.addColorStop(0.5, "#ffd700"); // Gold
-    gradient.addColorStop(1, "#1babe9"); // Blue
-    ctx.fillStyle = gradient;
-    ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
-  });
-
-  requestAnimationFrame(drawVisualizer);
-}
-
-// Fetch Spotify track features
-async function updateAudioData() {
-  if (!token) return;
-
-  try {
-    const trackRes = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!trackRes.ok) {
-      audioData.fill(0);
-      return;
-    }
-
-    const trackData = await trackRes.json();
-    if (!trackData || !trackData.item) {
-      audioData.fill(0);
-      return;
-    }
-
-    const featuresRes = await fetch(
-      `https://api.spotify.com/v1/audio-features/${trackData.item.id}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    const features = await featuresRes.json();
-    audioData = Array.from({ length: 64 }, () =>
-      Math.random() * (features.energy || 0.5)
-    );
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-// Start visualizer loop
-function startVisualizer() {
-  setInterval(updateAudioData, 100);
-  drawVisualizer();
+  // Example: you could fetch currently playing track:
+  // fetch("https://api.spotify.com/v1/me/player/currently-playing", {
+  //   headers: { Authorization: `Bearer ${token}` }
+  // }).then(res => res.json()).then(console.log);
 }
