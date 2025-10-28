@@ -14,7 +14,7 @@ loginButton.addEventListener("click", () => {
   window.location.href = "https://auth.avinylmix.com/login";
 });
 
-// Check for token in sessionStorage
+// Check token in sessionStorage
 token = sessionStorage.getItem("spotify_access_token");
 
 if (token) {
@@ -22,7 +22,7 @@ if (token) {
   startVisualizer();
 }
 
-// Poll backend for token after login redirect
+// Poll backend for token after login
 async function checkToken() {
   try {
     const res = await fetch("https://auth.avinylmix.com/get-token", {
@@ -42,12 +42,12 @@ async function checkToken() {
   }
 }
 
-// Call every 2 seconds until token exists
+// Call every 2s until token exists
 setInterval(() => {
   if (!token) checkToken();
 }, 2000);
 
-// Visualizer drawing
+// Visualizer draw
 function drawVisualizer() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -66,7 +66,7 @@ function drawVisualizer() {
   requestAnimationFrame(drawVisualizer);
 }
 
-// Poll Spotify API for audio features
+// Fetch Spotify track features
 async function updateAudioData() {
   if (!token) return;
 
@@ -94,7 +94,6 @@ async function updateAudioData() {
     );
 
     const features = await featuresRes.json();
-    // Map energy/loudness/danceability to 0-1 range
     audioData = Array.from({ length: 64 }, () =>
       Math.random() * (features.energy || 0.5)
     );
@@ -105,6 +104,6 @@ async function updateAudioData() {
 
 // Start visualizer loop
 function startVisualizer() {
-  setInterval(updateAudioData, 100); // update audio every 100ms
+  setInterval(updateAudioData, 100);
   drawVisualizer();
 }
