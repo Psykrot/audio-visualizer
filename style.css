@@ -1,4 +1,3 @@
-/* Fullscreen canvas */
 body, html {
   margin: 0;
   padding: 0;
@@ -8,7 +7,6 @@ body, html {
   background: transparent;
 }
 
-/* Login button style */
 #login-button {
   position: absolute;
   top: 50%;
@@ -25,7 +23,6 @@ body, html {
   z-index: 10;
 }
 
-/* Canvas */
 #visualizer {
   width: 100%;
   height: 100%;
