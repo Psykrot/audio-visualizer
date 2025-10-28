@@ -1,30 +1,46 @@
+/* Make the body transparent for OBS */
 body {
   margin: 0;
-  background: transparent; /* Transparent for OBS */
+  background: transparent;
   overflow: hidden;
+  font-family: 'Arial', sans-serif;
 }
 
+/* Center the login button above the canvas */
 #login-container {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  z-index: 10; /* Make sure it's above the canvas */
 }
 
+/* Login button style */
 #login-button {
   font-size: 20px;
   padding: 10px 20px;
-  background: linear-gradient(90deg, #ff6ec7, #1babe9, #ffd700);
+  background: linear-gradient(90deg, #ff6ec7, #1babe9, #ffd700); /* Vaporwave gradient */
   color: white;
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  font-family: 'Arial', sans-serif;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
+/* Hover effect for button */
+#login-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255, 110, 199, 0.7),
+              0 0 20px rgba(27, 171, 233, 0.7),
+              0 0 20px rgba(255, 215, 0, 0.7);
+}
+
+/* Canvas covering full screen */
 canvas {
   display: block;
   position: absolute;
   top: 0;
   left: 0;
+  z-index: 1; /* Behind the login button */
+  pointer-events: none; /* Allow clicks to pass through */
 }
