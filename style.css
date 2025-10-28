@@ -25,3 +25,18 @@ body, html {
   border: none;
   border-radius: 4px;
 }
+
+#start-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  padding: 15px 25px;
+  font-size: 18px;
+  background: #ff6ec4;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
