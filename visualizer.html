@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cyberpunk Audio Visualizer</title>
+<style>
+  html,body {margin:0;height:100%;background:transparent;overflow:hidden;}
+  canvas {width:100%;height:100%;display:block;}
+</style>
+</head>
+<body>
+<canvas id="visualizer"></canvas>
+<script>
+const canvas = document.getElementById("visualizer");
+const ctx = canvas.getContext("2d");
+let analyser, dataArray;
+let WIDTH, HEIGHT;
+
+function resizeCanvas(){
+  WIDTH = canvas.width = window.innerWidth;
+  HEIGHT = canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+async function getVoicemeeterStream() {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const target = devices.find(d =>
+    d.kind === "audioinput" && /voicemeeter/i.test(d.label)
+  );
+
+  if (!target) throw new Error("No Voicemeeter input device found.");
+
+  const constraints = { audio: { deviceId: { exact: target.deviceId } } };
+  return await navigator.mediaDevices.getUserMedia(constraints);
+}
+
+async function setupAudio() {
+  try {
+    const stream = await getVoicemeeterStream();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    const bufferLength = analyser.frequencyBinCount;
+    dataArray = new Uint8Array(bufferLength);
+
+    const source = audioCtx.createMediaStreamSource(stream);
+    source.connect(analyser);
+    draw();
+  } catch (err) {
+    alert("⚠️ Audio access failed: " + err.message);
+  }
+}
+
+function draw() {
+  requestAnimationFrame(draw);
+  analyser.getByteFrequencyData(dataArray);
+  ctx.clearRect(0,0,WIDTH,HEIGHT);
+
+  const barWidth = (WIDTH / dataArray.length) * 2.5;
+  let x = 0;
+  for (let i=0;i<dataArray.length;i++){
+    const barHeight = (dataArray[i]/255)*HEIGHT*0.9;
+    const hue = (i*4)%360;
+    const grad = ctx.createLinearGradient(0,HEIGHT-barHeight,0,HEIGHT);
+    grad.addColorStop(0,`hsl(${hue},100%,60%)`);
+    grad.addColorStop(1,"rgba(0,0,0,0.1)");
+    ctx.fillStyle = grad;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = `hsl(${hue},100%,70%)`;
+    ctx.fillRect(x,HEIGHT-barHeight,barWidth,barHeight);
+    x += barWidth + 1;
+  }
+}
+
+setupAudio();
+</script>
+</body>
+</html>
