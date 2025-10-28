@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vaporwave Audio Visualizer</title>
+<title>Spotify Vaporwave Visualizer</title>
 <style>
   html, body {
     margin: 0;
+    padding: 0;
     height: 100%;
-    background: #00ff00; /* Greenscreen background */
+    background: transparent; /* transparent background */
     overflow: hidden;
   }
 
@@ -17,81 +18,129 @@
     width: 100%;
     height: 100%;
   }
+
+  #login-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 18px;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #fff;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    z-index: 10;
+  }
 </style>
 </head>
 <body>
 <canvas id="visualizer"></canvas>
+<button id="login-btn">Login with Spotify</button>
 
 <script>
 const canvas = document.getElementById("visualizer");
 const ctx = canvas.getContext("2d");
-
-let analyser, dataArray;
 let WIDTH, HEIGHT;
-
-function resizeCanvas() {
+function resizeCanvas(){
   WIDTH = canvas.width = window.innerWidth;
   HEIGHT = canvas.height = window.innerHeight;
 }
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// Vaporwave colors for bars
-const colors = [
-  '#FF77FF', // pink/purple
-  '#FFD700', // gold
-  '#00FFFF', // cyan
-  '#7F00FF', // violet
-  '#FF6EC7', // neon pink
-  '#00FFAA'  // mint green
-];
+// Vaporwave colors
+const colors = ['#FF77FF','#FFD700','#00FFFF','#7F00FF','#FF6EC7','#00FFAA'];
 
-// Automatically find Voicemeeter B2
-async function getVoicemeeterStream() {
-  const devices = await navigator.mediaDevices.enumerateDevices();
-  const target = devices.find(d =>
-    d.kind === "audioinput" && /voicemeeter/i.test(d.label)
-  );
+// Spotify OAuth Setup
+const CLIENT_ID = 'a622b08d4d0f4a42aab4610c7764ce74';
+const REDIRECT_URI = 'https://psykrot.github.io/audio-visualizer/index.html'; // must match Spotify app settings
+let accessToken = null;
 
-  if (!target) throw new Error("No Voicemeeter input device found. Make sure you granted mic/audio access in Chrome.");
+document.getElementById("login-btn").onclick = () => {
+  const scopes = 'user-read-currently-playing';
+  const authURL = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(scopes)}`;
+  window.location.href = authURL;
+};
 
-  const constraints = { audio: { deviceId: { exact: target.deviceId } } };
-  return await navigator.mediaDevices.getUserMedia(constraints);
-}
-
-async function setupAudio() {
-  try {
-    const stream = await getVoicemeeterStream();
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 256;
-    const bufferLength = analyser.frequencyBinCount;
-    dataArray = new Uint8Array(bufferLength);
-
-    const source = audioCtx.createMediaStreamSource(stream);
-    source.connect(analyser);
-
-    draw();
-  } catch (err) {
-    alert("⚠️ Audio access failed: " + err.message);
+// Check for access token in URL after redirect
+if(window.location.hash){
+  const hash = window.location.hash.substring(1);
+  const params = new URLSearchParams(hash);
+  accessToken = params.get('access_token');
+  if(accessToken){
+    document.getElementById("login-btn").style.display = 'none';
+    startVisualizer();
   }
 }
 
-function draw() {
-  requestAnimationFrame(draw);
-  analyser.getByteFrequencyData(dataArray);
-  ctx.clearRect(0, 0, WIDTH, HEIGHT);
+// Poll Spotify API for currently playing track
+let audioAnalysis = null;
+let startTime = 0;
 
-  const barWidth = (WIDTH / dataArray.length) * 2.5;
-  let x = 0;
+async function fetchCurrentTrack(){
+  const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing',{
+    headers: { 'Authorization': 'Bearer ' + accessToken }
+  });
+  if(response.status === 204) return null; // nothing playing
+  const data = await response.json();
+  return data;
+}
 
-  for (let i = 0; i < dataArray.length; i++) {
-    const barHeight = (dataArray[i] / 255) * HEIGHT * 0.9;
+async function fetchAudioAnalysis(trackId){
+  const response = await fetch(`https://api.spotify.com/v1/audio-analysis/${trackId}`,{
+    headers: { 'Authorization': 'Bearer ' + accessToken }
+  });
+  const data = await response.json();
+  return data;
+}
 
-    // Vaporwave color cycling
+// Draw bars based on beats/sections
+function drawBars(trackProgress){
+  ctx.clearRect(0,0,WIDTH,HEIGHT);
+  if(!audioAnalysis) return;
+
+  const bars = audioAnalysis.bars;
+  const currentBars = bars.filter(bar => bar.start <= trackProgress);
+  const maxBars = Math.min(currentBars.length, WIDTH / 10);
+
+  for(let i=0;i<maxBars;i++){
+    const bar = currentBars[i];
+    const barHeight = Math.min((bar.loudness + 60) * 3, HEIGHT);
     const color = colors[i % colors.length];
     ctx.fillStyle = color;
-    ctx.shadowBlur = 20;
     ctx.shadowColor = color;
+    ctx.shadowBlur = 20;
+    const barWidth = WIDTH / maxBars;
+    ctx.fillRect(i*barWidth, HEIGHT - barHeight, barWidth*0.8, barHeight);
+  }
+}
 
-    ctx.fillRect(x, HEIGHT - barHeight, barWidth, barHe
+function animate(){
+  requestAnimationFrame(animate);
+  if(!audioAnalysis || !startTime) return;
+  const trackProgress = (performance.now()/1000 - startTime) % audioAnalysis.track.duration;
+  drawBars(trackProgress);
+}
+
+// Main function
+async function startVisualizer(){
+  const trackData = await fetchCurrentTrack();
+  if(!trackData || !trackData.item) return alert("No track playing!");
+  audioAnalysis = await fetchAudioAnalysis(trackData.item.id);
+  startTime = performance.now()/1000 - trackData.progress_ms/1000;
+  animate();
+
+  // Update every 5 seconds for new tracks
+  setInterval(async () => {
+    const newTrack = await fetchCurrentTrack();
+    if(newTrack && newTrack.item.id !== trackData.item.id){
+      audioAnalysis = await fetchAudioAnalysis(newTrack.item.id);
+      startTime = performance.now()/1000 - newTrack.progress_ms/1000;
+    }
+  }, 5000);
+}
+</script>
+</body>
+</html>
