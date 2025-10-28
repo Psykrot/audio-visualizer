@@ -1,6 +1,5 @@
 const canvas = document.getElementById("visualizer");
 const ctx = canvas.getContext("2d");
-const deviceSelect = document.getElementById("device-select");
 const numBars = 64;
 
 let analyser;
@@ -16,14 +15,15 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// Setup audio stream
-async function setupAudio(deviceId) {
+// Setup audio stream (always prompt)
+async function setupAudio() {
   try {
-    if (audioCtx) audioCtx.close(); // Close previous context if exists
+    if (audioCtx) audioCtx.close(); // Close previous context
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+    // Ask for any microphone/audio input
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: deviceId ? { deviceId: { exact: deviceId } } : true
+      audio: true
     });
 
     source = audioCtx.createMediaStreamSource(stream);
@@ -34,33 +34,13 @@ async function setupAudio(deviceId) {
 
     source.connect(analyser);
     draw();
+
   } catch (err) {
     console.error("Audio access failed:", err);
-    populateDeviceSelect();
-  }
-}
-
-// Populate dropdown if default device fails
-async function populateDeviceSelect() {
-  const devices = await navigator.mediaDevices.enumerateDevices();
-  const audioInputs = devices.filter(d => d.kind === "audioinput");
-
-  deviceSelect.innerHTML = "";
-  audioInputs.forEach(device => {
-    const option = document.createElement("option");
-    option.value = device.deviceId;
-    option.text = device.label || `Input ${device.deviceId}`;
-    deviceSelect.appendChild(option);
-  });
-
-  if (audioInputs.length > 0) {
-    deviceSelect.style.display = "block";
-    deviceSelect.onchange = () => setupAudio(deviceSelect.value);
-  } else {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "white";
     ctx.font = "24px sans-serif";
-    ctx.fillText("No audio input devices found", 20, 40);
+    ctx.fillText("Audio access denied or failed", 20, 40);
   }
 }
 
@@ -91,5 +71,5 @@ function draw() {
   requestAnimationFrame(draw);
 }
 
-// Try Voicemeeter by default
-setupAudio("VM432:5");
+// Always prompt for audio input
+setupAudio();
