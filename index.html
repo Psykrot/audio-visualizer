@@ -30,6 +30,8 @@ const loginBtn = document.getElementById('login-btn');
 const canvas = document.getElementById("visualizer");
 const ctx = canvas.getContext("2d");
 let WIDTH, HEIGHT;
+
+// ===== Canvas setup =====
 function resizeCanvas(){ WIDTH=canvas.width=window.innerWidth; HEIGHT=canvas.height=window.innerHeight; }
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
@@ -37,19 +39,22 @@ resizeCanvas();
 // Vaporwave colors
 const colors = ['#FF77FF','#FFD700','#00FFFF','#7F00FF','#FF6EC7','#00FFAA'];
 
-// Get access token from URL hash
+// ===== Get Spotify token from URL hash =====
 function getTokenFromHash(){
-  if(window.location.hash){
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    return params.get('access_token');
-  }
-  return null;
+  const hash = window.location.hash;
+  if(!hash) return null;
+  const params = new URLSearchParams(hash.substring(1));
+  return params.get('access_token');
 }
 
 let accessToken = getTokenFromHash();
 
-// ===== Login button =====
+// Clean up URL hash
+if(accessToken){
+  history.replaceState(null, '', window.location.pathname);
+}
+
+// ===== Login button behavior =====
 if(!accessToken){
   loginBtn.style.display='block';
   loginBtn.onclick = ()=>{
@@ -79,7 +84,7 @@ async function fetchAudioAnalysis(trackId){
   return await response.json();
 }
 
-// ===== Visualizer =====
+// ===== Visualizer logic =====
 let audioAnalysis=null, startTime=0;
 
 function drawBars(trackProgress){
