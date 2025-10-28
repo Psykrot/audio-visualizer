@@ -2,8 +2,8 @@ const canvas = document.getElementById("visualizer");
 const ctx = canvas.getContext("2d");
 const deviceSelect = document.getElementById("device-select");
 const startBtn = document.getElementById("start-btn");
-const numBars = 64;
 
+const numBars = 64;
 let audioCtx;
 let analyser;
 let dataArray;
@@ -17,7 +17,7 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// Draw visualizer bars
+// Draw cyberpunk bars
 function draw() {
   if (!analyser) return;
 
@@ -47,31 +47,19 @@ function draw() {
   requestAnimationFrame(draw);
 }
 
-// Setup audio stream
-async function setupAudio(deviceId) {
-  try {
-    if (audioCtx) await audioCtx.close();
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    await audioCtx.resume();
+// Setup audio analyser from MediaStream
+function setupStream(stream) {
+  source = audioCtx.createMediaStreamSource(stream);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 256;
+  analyser.smoothingTimeConstant = 0.8;
+  dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-    const constraints = deviceId ? { audio: { deviceId: { exact: deviceId } } } : { audio: true };
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-    source = audioCtx.createMediaStreamSource(stream);
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.8;
-    dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-    source.connect(analyser);
-    draw();
-  } catch (err) {
-    console.error("Audio access failed:", err);
-    populateDeviceSelect();
-  }
+  source.connect(analyser);
+  draw();
 }
 
-// Populate device dropdown
+// Populate dropdown with available audio inputs
 async function populateDeviceSelect() {
   const devices = await navigator.mediaDevices.enumerateDevices();
   const audioInputs = devices.filter(d => d.kind === "audioinput");
@@ -93,11 +81,31 @@ async function populateDeviceSelect() {
   });
 
   deviceSelect.style.display = "block";
-  deviceSelect.onchange = () => setupAudio(deviceSelect.value);
+  deviceSelect.onchange = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { deviceId: { exact: deviceSelect.value } }
+      });
+      setupStream(stream);
+    } catch (err) {
+      console.error("Failed to select device:", err);
+    }
+  };
 }
 
-// Start button listener
-startBtn.addEventListener("click", () => {
+// Start visualizer after user gesture
+startBtn.addEventListener("click", async () => {
   startBtn.style.display = "none"; // hide button
-  setupAudio(); // request audio access
+
+  // Create AudioContext inside gesture
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  await audioCtx.resume();
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    setupStream(stream);
+  } catch (err) {
+    console.error("Audio access failed:", err);
+    populateDeviceSelect();
+  }
 });
