@@ -7,26 +7,31 @@ const WIDTH = 500;
 const HEIGHT = 400;
 
 let context, analyser, freqs;
+
 const opts = {
-  smoothing: 0.6,
-  fft: 8,
-  minDecibels: -70,
-  scale: 0.2,
-  glow: 10,
+  smoothing: 0.7,    // slightly smoother
+  fft: 11,           // more frequency bins
+  minDecibels: -90,  // capture quieter highs
+  maxDecibels: -10,  // prevent overpowering bass
+  glow: 30,          // neon glow
   color1: [203, 36, 128],
   color2: [41, 200, 192],
-  color3: [24, 137, 218],
-  fillOpacity: 0.6,
-  lineWidth: 1,
+  color3: [255, 223, 0],
+  fillOpacity: 0.5,
+  lineWidth: 2,
   blend: "screen",
+  width: 30,
   shift: 50,
-  width: 60,
-  amp: 1
+  amp: 1.5          // slightly stronger overall amplitude
 };
 
 function range(i) { return Array.from(Array(i).keys()); }
 const shuffle = [1,3,0,4,2];
-function freq(channel, i) { return freqs[2*channel + shuffle[i]*6]; }
+function freq(channel, i) { 
+  // smooth out the high/mid/bass
+  const value = freqs[2*channel + shuffle[i]*Math.floor(freqs.length/15)];
+  return value * (0.5 + 0.5 * (i/4)); // scales lower indices slightly down
+}
 function scale(i) { const x = Math.abs(2-i); return (3-x)/3 * opts.amp; }
 
 function path(channel) {
@@ -69,15 +74,14 @@ function visualize() {
   analyser.smoothingTimeConstant = opts.smoothing;
   analyser.fftSize = Math.pow(2, opts.fft);
   analyser.minDecibels = opts.minDecibels;
-  analyser.maxDecibels = 0;
+  analyser.maxDecibels = opts.maxDecibels;
   analyser.getByteFrequencyData(freqs);
+
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
-
   path(0);
   path(1);
   path(2);
-
   requestAnimationFrame(visualize);
 }
 
@@ -87,7 +91,6 @@ async function start() {
   analyser = context.createAnalyser();
   freqs = new Uint8Array(analyser.frequencyBinCount);
 
-  // Attempt Voicemeeter B2 first
   let stream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -95,7 +98,6 @@ async function start() {
     });
   } catch (err) {
     console.warn("Voicemeeter B2 not found, falling back to default input", err);
-    // populate dropdown
     const devices = await navigator.mediaDevices.enumerateDevices();
     const audioInputs = devices.filter(d => d.kind === "audioinput");
     audioInputs.forEach(d => {
