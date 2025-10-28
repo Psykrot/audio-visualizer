@@ -1,8 +1,7 @@
 body {
-  background: radial-gradient(farthest-side, #182158 0%, #030414 100%) no-repeat fixed 0 0;
+  background: transparent; /* OBS-friendly */
   margin: 0;
 }
-
 #canvas {
   position: absolute;
   top: 50%;
@@ -10,15 +9,23 @@ body {
   width: 50%;
   height: 400px;
 }
-
-button, select {
+button {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate3d(-50%, -50%, 0);
+  transform: translate3d(-50%,-50%,0);
   font-size: 2vw;
   border-radius: 9em;
   padding: 0.5em 1.5em;
   border: none;
   background: rgba(255,255,255,0.8);
+}
+#device-select {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: none;
+  z-index: 10;
+  padding: 0.5em;
+  font-size: 14px;
 }
